@@ -55,6 +55,8 @@ export async function handler(
     body: event.body, // TODO: handle event.isBase64Encoded
   });
 
+  const outBody = await normalizeLambdaOutgoingBody(r.body, r.headers);
+  
   // Lambda v2 https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html#http-api-develop-integrations-lambda.v2
   if ("cookies" in event || "rawPath" in event) {
     const cookies = normalizeCookieHeader(r.headers["set-cookie"]);
@@ -63,13 +65,10 @@ export async function handler(
       cookies,
       statusCode: r.status,
       headers: normalizeLambdaOutgoingHeaders(r.headers, true),
-      body: await normalizeLambdaOutgoingBody(r.body, r.headers).then(
-        (r) => r.body
-      ),
+      body: outBody.body,
+      isBase64Encoded: outBody.type === "binary",
     };
   }
-
-  const outBody = await normalizeLambdaOutgoingBody(r.body, r.headers);
 
   return {
     statusCode: r.status,
